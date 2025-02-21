@@ -73,12 +73,13 @@ void ResetBoard(string board[][8])
 
 void DrawBoard(string board[][8], int x, int y)
 {
-    board[8-x][y-1] = "X";
-    
+    board[8 - x][y - 1] = "X";
+
     int n = 8, f1 = 8, f2 = 8;
     string offX = "      ", offY = "\n\n"; // 3:1
-    cout << offY << offX << "    A   B   C   D   E   F   G   H\n";
-    cout << offX << "  ---------------------------------\n";
+    cout << offY << offX << as.REVERSED << as.BOLD + " " << "     A   B   C   D   E   F   G   H      \n"
+         << as.RESET;
+    cout << offX << as.REVERSED + as.BOLD + "   " + as.RESET << " --------------------------------- " << as.REVERSED + as.BOLD << "   " << as.RESET << "\n";
 
     for (int i = 1; i <= n; i++)
     {
@@ -86,24 +87,31 @@ void DrawBoard(string board[][8], int x, int y)
         {
             if (j == 1)
             {
-                cout << offX << f1 << " | "<<board[i-1][j-1]<<" ";
+                cout << offX << as.REVERSED << as.BOLD + " " << f1 << " " << as.RESET << " | " << board[i - 1][j - 1] << " ";
                 f1--;
             }
             else if (j == n)
             {
-                cout << "| "<<board[i-1][j-1]<<" | " << f2;
+                cout << "| " << board[i - 1][j - 1] << " | " << as.REVERSED << as.BOLD + " " << f2 << " " << as.RESET;
                 f2--;
             }
             else
             {
-                cout << "| "<<board[i-1][j-1]<<" ";
+                if (i % 2 == 0 && j % 2 == 0 || i % 2 != 0 && j % 2 != 0)
+                {
+                    cout << "|" << as.BG_BLUE + as.BOLD << " " << board[i - 1][j - 1] << " " << as.RESET;
+                }
+                else
+                {
+                    cout << "|" << as.BG_B_BLUE + as.BOLD << " " << board[i - 1][j - 1] << " " << as.RESET;
+                }
             }
         }
         cout << "\n";
-        cout << offX << "  ---------------------------------\n";
+        cout << offX << as.REVERSED + as.BOLD + "   " + as.RESET << " --------------------------------- " << as.REVERSED + as.BOLD << "   " << as.RESET << "\n";
     }
-    cout << offX << "    A   B   C   D   E   F   G   H\n"
-         << offY;
+    cout << offX << as.REVERSED << as.BOLD + " " << "     A   B   C   D   E   F   G   H      \n"
+         << as.RESET << offY;
 }
 
 int main()
@@ -132,21 +140,49 @@ int main()
     std::cout << ansi.B_BLUE << "Bright Blue Text" << ansi.RESET << "\n";
 
     std::cout << "\nBackground Color Demo:\n";
-    std::cout << ansi.BG_RED << "Red Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_RED + as.BLACK + as.BOLD << "Red Background" << ansi.RESET << "\n";
     std::cout << ansi.BG_GREEN << "Green Background" << ansi.RESET << "\n";
     std::cout << ansi.BG_B_GREEN << "Blue Background" << ansi.RESET << "\n";
     std::cout << ansi.BG_B_WHITE << "Green Background" << ansi.RESET << "\n";
     std::cout << ansi.BG_B_BLACK << "Blue Background" << ansi.RESET << "\n";
-    string board[8][8];
-    ResetBoard(board);
+    std::cout << ansi.BG_B_WHITE + as.B_BLACK << "Green Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_B_BLACK + as.B_WHITE << "Blue Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_B_WHITE + as.WHITE + as.BOLD + as.DIM<< "Green Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_B_BLACK + as.BLACK + as.BOLD + as.DIM<< "Blue Background" << ansi.RESET << "\n";
+    std::cout << ansi.B_WHITE + as.B_BLACK << "Green affafasfaBackground" << ansi.RESET << "\n";
+    std::cout << ansi.B_BLACK + as.B_WHITE << "Blue Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_B_RED + as.BLACK << "Blue Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_B_YELLOW + as.BLACK << "Blue Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_YELLOW + as.BLACK << "Blue Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_B_YELLOW + as.BOLD + as.B_WHITE << "Blue Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_YELLOW + as.BOLD + as.B_WHITE << "Blue Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_B_BLUE + as.BOLD + as.B_WHITE << "Blue Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_BLUE + as.BOLD + as.B_WHITE << "Blue Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_B_BLUE + as.BOLD + as.BLACK << "Blue Background" << ansi.RESET << "\n";
+    std::cout << ansi.BG_BLUE + as.BOLD + as.BLACK << "Blue Background" << ansi.RESET << "\n";
+    
+
+    // string board[8][8];
+    // ResetBoard(board);
+    string board[8][8] = {
+        {"R", "N", "B", "Q", "K", "B", "N", "R"},
+        {"P", "P", "P", "P", "P", "P", "P", "P"},
+        {".", ".", ".", ".", ".", ".", ".", "."},
+        {".", ".", ".", ".", ".", ".", ".", "."},
+        {".", ".", ".", ".", ".", ".", ".", "."},
+        {".", ".", ".", ".", ".", ".", ".", "."},
+        {"p", "p", "p", "p", "p", "p", "p", "p"},
+        {"r", "n", "b", "q", "k", "b", "n", "r"}
+    };
+    
+    DrawBoard(board, 1, 1);
     while (true)
     {
-        DrawBoard(board, 1, 1);
         int x, y;
         cin >> x >> y;
-        DrawBoard(board, x, y);
         system("cls");
+        DrawBoard(board, x, y);
     }
-    
+
     return 0;
 }
