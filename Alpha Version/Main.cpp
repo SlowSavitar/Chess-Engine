@@ -60,6 +60,9 @@ struct AnsiiCodeEscapes
 };
 AnsiiCodeEscapes as;
 
+//   \033[38;2;<r>;<g>;<b>m  # Foreground
+//   \033[48;2;<r>;<g>;<b>m  # Background
+
 void ResetBoard(string board[][8])
 {
     for (int i = 0; i < 8; i++)
@@ -71,15 +74,61 @@ void ResetBoard(string board[][8])
     }
 }
 
+void FENtoBoard(string board[][8], string fen)
+{
+    string pieceSymbols[128] = {};
+    string white = as.BOLD + "\033[38;2;255;255;255m";
+    string black = as.BOLD + "\033[38;2;0;0;0m";
+    pieceSymbols['P'] = white + "P";
+    pieceSymbols['N'] = white + "N";
+    pieceSymbols['B'] = white + "B";
+    pieceSymbols['R'] = white + "R";
+    pieceSymbols['Q'] = white + "Q";
+    pieceSymbols['K'] = white + "K"; // White pieces
+    pieceSymbols['p'] = black + "P";
+    pieceSymbols['n'] = black + "N";
+    pieceSymbols['b'] = black + "B";
+    pieceSymbols['r'] = black + "R";
+    pieceSymbols['q'] = black + "Q";
+    pieceSymbols['k'] = black + "K"; // Black pieces
+
+    int row = 0, col = 0;
+    for (char ch : fen)
+    {
+        if (ch == '/')
+        {
+            row++;
+            col = 0;
+        }
+        else if (isdigit(ch))
+        {
+            col += ch - '0';
+        }
+        else if (isalpha(ch))
+        {
+            board[row][col] = pieceSymbols[ch];
+            col++;
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
 void DrawBoard(string board[][8], int x, int y)
 {
-    board[8 - x][y - 1] = "X";
+    board[8 - x][y - 1] = as.BOLD + "X";
 
+    string backDark = "\033[48;2;240;128;128m";
+    string backLight = "\033[48;2;255;182;193m";
+    string borderBG = "\033[48;2;32;32;32m";
+    string borderText = as.DIM + "\033[38;2;255;255;255m";
+    string sep = "";
     int n = 8, f1 = 8, f2 = 8;
     string offX = "      ", offY = "\n\n"; // 3:1
-    cout << offY << offX << as.REVERSED << as.BOLD + " " << "     A   B   C   D   E   F   G   H      \n"
-         << as.RESET;
-    cout << offX << as.REVERSED + as.BOLD + "   " + as.RESET << " --------------------------------- " << as.REVERSED + as.BOLD << "   " << as.RESET << "\n";
+    cout << offY << offX << borderBG + borderText << as.BOLD + " " << "   a  b  c  d  e  f  g  h    " << as.RESET << "\n";
+    // cout << offX << borderBG + borderText + as.BOLD + "   " + as.RESET << as.DIM + " --------------------------------- " << as.RESET << borderBG + borderText + as.BOLD << "   " << as.RESET << "\n";
 
     for (int i = 1; i <= n; i++)
     {
@@ -87,94 +136,56 @@ void DrawBoard(string board[][8], int x, int y)
         {
             if (j == 1)
             {
-                cout << offX << as.REVERSED << as.BOLD + " " << f1 << " " << as.RESET << " | " << board[i - 1][j - 1] << " ";
-                f1--;
+                if (i % 2 != 0)
+                {
+                    cout << offX << borderBG + borderText << as.BOLD + " " << f1 << " " << as.RESET << as.DIM + sep + as.RESET << backDark << " " << board[i - 1][j - 1] << " " << as.RESET;
+                    f1--;
+                }
+                else
+                {
+                    cout << offX << borderBG + borderText << as.BOLD + " " << f1 << " " << as.RESET << as.DIM + sep + as.RESET << backLight << " " << board[i - 1][j - 1] << " " << as.RESET;
+                    f1--;
+                }
             }
             else if (j == n)
             {
-                cout << "| " << board[i - 1][j - 1] << " | " << as.REVERSED << as.BOLD + " " << f2 << " " << as.RESET;
-                f2--;
+                if (i % 2 == 0)
+                {
+                    cout << "" + as.DIM + sep + as.RESET << backDark << " " << board[i - 1][j - 1] << " " + as.RESET << as.DIM << sep + as.RESET << as.RESET + borderBG + borderText << as.BOLD + " " << f2 << " " << as.RESET;
+                    f2--;
+                }
+                else
+                {
+                    cout << "" + as.DIM + sep + as.RESET << backLight << " " << board[i - 1][j - 1] << " " + as.RESET << as.DIM << sep + as.RESET << as.RESET + borderBG + borderText << as.BOLD + " " << f2 << " " << as.RESET;
+                    f2--;
+                }
             }
             else
             {
                 if (i % 2 == 0 && j % 2 == 0 || i % 2 != 0 && j % 2 != 0)
                 {
-                    cout << "|" << as.BG_BLUE + as.BOLD << " " << board[i - 1][j - 1] << " " << as.RESET;
+                    cout << "" + as.DIM + sep + as.RESET << backDark + as.BOLD << " " << board[i - 1][j - 1] << " " << as.RESET;
                 }
                 else
                 {
-                    cout << "|" << as.BG_B_BLUE + as.BOLD << " " << board[i - 1][j - 1] << " " << as.RESET;
+                    cout << "" + as.DIM + sep + as.RESET << backLight + as.BOLD << " " << board[i - 1][j - 1] << " " << as.RESET;
                 }
             }
         }
         cout << "\n";
-        cout << offX << as.REVERSED + as.BOLD + "   " + as.RESET << " --------------------------------- " << as.REVERSED + as.BOLD << "   " << as.RESET << "\n";
+        // cout << offX << borderBG + borderText + as.BOLD + "   " + as.RESET << as.DIM << " --------------------------------- " << as.RESET << borderBG + borderText + as.BOLD << "   " << as.RESET << "\n";
     }
-    cout << offX << as.REVERSED << as.BOLD + " " << "     A   B   C   D   E   F   G   H      \n"
-         << as.RESET << offY;
+    cout << offX << borderBG + borderText << as.BOLD + " " << "   a  b  c  d  e  f  g  h    "<< as.RESET << offY << "\n";
 }
 
 int main()
 {
     system("");
-    AnsiiCodeEscapes ansi;
-
-    std::cout << ansi.BOLD << "Text Styles Demo" << ansi.RESET << "\n";
-    std::cout << ansi.BOLD << "Bold Text" << ansi.RESET << "\n";
-    std::cout << ansi.DIM << "Dim Text" << ansi.RESET << "\n";
-    std::cout << ansi.ITALIC << "Italic Text" << ansi.RESET << "\n";
-    std::cout << ansi.UNDERLINE << "Underlined Text" << ansi.RESET << "\n";
-    std::cout << ansi.BLINK << "Blinking Text" << ansi.RESET << "\n";
-    std::cout << ansi.REVERSED << "Reversed Text" << ansi.RESET << "\n";
-    std::cout << ansi.STRIKETHROUGH << "Strikethrough Text" << ansi.RESET << "\n";
-
-    std::cout << "\nColor Demo:\n";
-    std::cout << ansi.RED << "Red Text" << ansi.RESET << "\n";
-    std::cout << ansi.GREEN << "Green Text" << ansi.RESET << "\n";
-    std::cout << ansi.BLUE << "Blue Text" << ansi.RESET << "\n";
-    std::cout << ansi.MAGENTA << "Magenta Text" << ansi.RESET << "\n";
-
-    std::cout << "\nBright Color Demo:\n";
-    std::cout << ansi.B_RED << "Bright Red Text" << ansi.RESET << "\n";
-    std::cout << ansi.B_GREEN << "Bright Green Text" << ansi.RESET << "\n";
-    std::cout << ansi.B_BLUE << "Bright Blue Text" << ansi.RESET << "\n";
-
-    std::cout << "\nBackground Color Demo:\n";
-    std::cout << ansi.BG_RED + as.BLACK + as.BOLD << "Red Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_GREEN << "Green Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_B_GREEN << "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_B_WHITE << "Green Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_B_BLACK << "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_B_WHITE + as.B_BLACK << "Green Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_B_BLACK + as.B_WHITE << "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_B_WHITE + as.WHITE + as.BOLD + as.DIM<< "Green Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_B_BLACK + as.BLACK + as.BOLD + as.DIM<< "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.B_WHITE + as.B_BLACK << "Green affafasfaBackground" << ansi.RESET << "\n";
-    std::cout << ansi.B_BLACK + as.B_WHITE << "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_B_RED + as.BLACK << "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_B_YELLOW + as.BLACK << "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_YELLOW + as.BLACK << "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_B_YELLOW + as.BOLD + as.B_WHITE << "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_YELLOW + as.BOLD + as.B_WHITE << "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_B_BLUE + as.BOLD + as.B_WHITE << "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_BLUE + as.BOLD + as.B_WHITE << "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_B_BLUE + as.BOLD + as.BLACK << "Blue Background" << ansi.RESET << "\n";
-    std::cout << ansi.BG_BLUE + as.BOLD + as.BLACK << "Blue Background" << ansi.RESET << "\n";
     
-
-    // string board[8][8];
-    // ResetBoard(board);
-    string board[8][8] = {
-        {"R", "N", "B", "Q", "K", "B", "N", "R"},
-        {"P", "P", "P", "P", "P", "P", "P", "P"},
-        {".", ".", ".", ".", ".", ".", ".", "."},
-        {".", ".", ".", ".", ".", ".", ".", "."},
-        {".", ".", ".", ".", ".", ".", ".", "."},
-        {".", ".", ".", ".", ".", ".", ".", "."},
-        {"p", "p", "p", "p", "p", "p", "p", "p"},
-        {"r", "n", "b", "q", "k", "b", "n", "r"}
-    };
-    
+    string board[8][8];
+    ResetBoard(board);
+    string startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    FENtoBoard(board, startFEN);
     DrawBoard(board, 1, 1);
     while (true)
     {
