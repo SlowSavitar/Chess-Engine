@@ -63,34 +63,47 @@ AnsiiCodeEscapes as;
 //   \033[38;2;<r>;<g>;<b>m  # Foreground
 //   \033[48;2;<r>;<g>;<b>m  # Background
 
-void ResetBoard(string board[][8])
+struct Piece
+{
+    string representation;
+    string type;
+    int color; // 1 for white, 0 for black, 888 for empty
+    // Previous position
+    // Legal moves
+};
+
+inline char YtoFiles(int y)
+{
+    return y + 96;
+}
+
+void ResetBoard(Piece board[][8])
 {
     for (int i = 0; i < 8; i++)
     {
         for (int j = 0; j < 8; j++)
         {
-            board[i][j] = " ";
+            board[i][j].representation = " ";
+            board[i][j].color = 888;
         }
     }
 }
 
-void FENtoBoard(string board[][8], string fen)
+void FENtoBoard(Piece board[][8], string fen)
 {
     string pieceSymbols[128] = {};
-    string white = as.BOLD + "\033[38;2;255;255;255m";
-    string black = as.BOLD + "\033[38;2;0;0;0m";
-    pieceSymbols['P'] = white + "P";
-    pieceSymbols['N'] = white + "N";
-    pieceSymbols['B'] = white + "B";
-    pieceSymbols['R'] = white + "R";
-    pieceSymbols['Q'] = white + "Q";
-    pieceSymbols['K'] = white + "K"; // White pieces
-    pieceSymbols['p'] = black + "P";
-    pieceSymbols['n'] = black + "N";
-    pieceSymbols['b'] = black + "B";
-    pieceSymbols['r'] = black + "R";
-    pieceSymbols['q'] = black + "Q";
-    pieceSymbols['k'] = black + "K"; // Black pieces
+    pieceSymbols['P'] = "P";
+    pieceSymbols['N'] = "N";
+    pieceSymbols['B'] = "B";
+    pieceSymbols['R'] = "R";
+    pieceSymbols['Q'] = "Q";
+    pieceSymbols['K'] = "K"; // White pieces
+    pieceSymbols['p'] = "p";
+    pieceSymbols['n'] = "n";
+    pieceSymbols['b'] = "b";
+    pieceSymbols['r'] = "r";
+    pieceSymbols['q'] = "q";
+    pieceSymbols['k'] = "k"; // Black pieces
 
     int row = 0, col = 0;
     for (char ch : fen)
@@ -106,7 +119,8 @@ void FENtoBoard(string board[][8], string fen)
         }
         else if (isalpha(ch))
         {
-            board[row][col] = pieceSymbols[ch];
+            board[row][col].representation = pieceSymbols[ch];
+            board[row][col].type = pieceSymbols[ch];
             col++;
         }
         else
@@ -116,9 +130,60 @@ void FENtoBoard(string board[][8], string fen)
     }
 }
 
-void DrawBoard(string board[][8], int x, int y)
+void DrawBoard(Piece board[][8])
 {
-    board[8 - x][y - 1] = as.BOLD + "X";
+    // board[8 - x][y - 1].representation = as.BOLD + "X";
+
+    string white = as.BOLD + "\033[38;2;255;255;255m";
+    string black = as.BOLD + "\033[38;2;0;0;0m";
+
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            if (board[i][j].representation == "p" || board[i][j].representation == "r" || board[i][j].representation == "n" || board[i][j].representation == "b" || board[i][j].representation == "q" || board[i][j].representation == "k")
+            {
+                if (board[i][j].representation == "p")
+                {
+                    board[i][j].representation = "P";
+                    board[i][j].type = "P";
+                }
+                else if (board[i][j].representation == "r")
+                {
+                    board[i][j].representation = "R";
+                    board[i][j].type = "R";
+                }
+                else if (board[i][j].representation == "n")
+                {
+                    board[i][j].representation = "N";
+                    board[i][j].type = "N";
+                }
+                else if (board[i][j].representation == "b")
+                {
+                    board[i][j].representation = "B";
+                    board[i][j].type = "B";
+                }
+                else if (board[i][j].representation == "q")
+                {
+                    board[i][j].representation = "Q";
+                    board[i][j].type = "Q";
+                }
+                else if (board[i][j].representation == "k")
+                {
+                    board[i][j].representation = "K";
+                    board[i][j].type = "K";
+                }
+
+                board[i][j].representation = black + board[i][j].representation;
+                board[i][j].color = 0;
+            }
+            else if (board[i][j].representation == "P" || board[i][j].representation == "R" || board[i][j].representation == "N" || board[i][j].representation == "B" || board[i][j].representation == "Q" || board[i][j].representation == "K")
+            {
+                board[i][j].representation = white + board[i][j].representation;
+                board[i][j].color = 1;
+            }
+        }
+    }
 
     string backDark = "\033[48;2;240;128;128m";
     string backLight = "\033[48;2;255;182;193m";
@@ -138,12 +203,12 @@ void DrawBoard(string board[][8], int x, int y)
             {
                 if (i % 2 != 0)
                 {
-                    cout << offX << borderBG + borderText << as.BOLD + " " << f1 << " " << as.RESET << as.DIM + sep + as.RESET << backDark << " " << board[i - 1][j - 1] << " " << as.RESET;
+                    cout << offX << borderBG + borderText << as.BOLD + " " << f1 << " " << as.RESET << as.DIM + sep + as.RESET << backDark << as.BOLD << " " << board[i - 1][j - 1].representation << " " << as.RESET;
                     f1--;
                 }
                 else
                 {
-                    cout << offX << borderBG + borderText << as.BOLD + " " << f1 << " " << as.RESET << as.DIM + sep + as.RESET << backLight << " " << board[i - 1][j - 1] << " " << as.RESET;
+                    cout << offX << borderBG + borderText << as.BOLD + " " << f1 << " " << as.RESET << as.DIM + sep + as.RESET << backLight << as.BOLD << " " << board[i - 1][j - 1].representation << " " << as.RESET;
                     f1--;
                 }
             }
@@ -151,12 +216,12 @@ void DrawBoard(string board[][8], int x, int y)
             {
                 if (i % 2 == 0)
                 {
-                    cout << "" + as.DIM + sep + as.RESET << backDark << " " << board[i - 1][j - 1] << " " + as.RESET << as.DIM << sep + as.RESET << as.RESET + borderBG + borderText << as.BOLD + " " << f2 << " " << as.RESET;
+                    cout << "" + as.DIM + sep + as.RESET << backDark << as.BOLD << " " << board[i - 1][j - 1].representation << " " + as.RESET << as.DIM << sep + as.RESET << as.RESET + borderBG + borderText << as.BOLD + " " << f2 << " " << as.RESET;
                     f2--;
                 }
                 else
                 {
-                    cout << "" + as.DIM + sep + as.RESET << backLight << " " << board[i - 1][j - 1] << " " + as.RESET << as.DIM << sep + as.RESET << as.RESET + borderBG + borderText << as.BOLD + " " << f2 << " " << as.RESET;
+                    cout << "" + as.DIM + sep + as.RESET << backLight << as.BOLD << " " << board[i - 1][j - 1].representation << " " + as.RESET << as.DIM << sep + as.RESET << as.RESET + borderBG + borderText << as.BOLD + " " << f2 << " " << as.RESET;
                     f2--;
                 }
             }
@@ -164,36 +229,155 @@ void DrawBoard(string board[][8], int x, int y)
             {
                 if (i % 2 == 0 && j % 2 == 0 || i % 2 != 0 && j % 2 != 0)
                 {
-                    cout << "" + as.DIM + sep + as.RESET << backDark + as.BOLD << " " << board[i - 1][j - 1] << " " << as.RESET;
+                    cout << "" + as.DIM + sep + as.RESET << backDark + as.BOLD << " " << board[i - 1][j - 1].representation << " " << as.RESET;
                 }
                 else
                 {
-                    cout << "" + as.DIM + sep + as.RESET << backLight + as.BOLD << " " << board[i - 1][j - 1] << " " << as.RESET;
+                    cout << "" + as.DIM + sep + as.RESET << backLight + as.BOLD << " " << board[i - 1][j - 1].representation << " " << as.RESET;
                 }
             }
         }
         cout << "\n";
         // cout << offX << borderBG + borderText + as.BOLD + "   " + as.RESET << as.DIM << " --------------------------------- " << as.RESET << borderBG + borderText + as.BOLD << "   " << as.RESET << "\n";
     }
-    cout << offX << borderBG + borderText << as.BOLD + " " << "   a  b  c  d  e  f  g  h    "<< as.RESET << offY << "\n";
+    cout << offX << borderBG + borderText << as.BOLD + " " << "   a  b  c  d  e  f  g  h    " << as.RESET << offY << "\n";
+}
+
+int CalculateLegalMoves(Piece board[][8], bool color, int x, int y, int data[])
+{
+    cout << "\n";
+    if (board[x][y].type == "P")
+    {
+        int k = 0;
+        if (board[x - 1][y].color == 888)
+        {
+            k++;
+            cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x + 1 << as.RESET << "    ";
+        }
+        if (board[x - 2][y].color == 888)
+        {
+            k++;
+            cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x + 2 << as.RESET << "    ";
+        }
+        if (board[x - 1][y - 1].color == !color)
+        {
+            k++;
+            cout << as.BOLD << k << ". " << YtoFiles(y + 1 - 1) << 8 - x + 1 << as.RESET << "    ";
+        }
+        cout << "\nMove " << YtoFiles(y + 1) << 8 - x << " to (1 - " << k << "): ";
+        return k;
+    }
+    else if (board[x][y].type == "R")
+    {
+        /* code */
+    }
+    else if (board[x][y].type == "N")
+    {
+        /* code */
+    }
+    else if (board[x][y].type == "B")
+    {
+        /* code */
+    }
+    else if (board[x][y].type == "Q")
+    {
+        /* code */
+    }
+    else if (board[x][y].type == "K")
+    {
+        /* code */
+    }
+}
+
+void Move(Piece board[][8], bool color = 1)
+{
+    int piece;
+    cout << as.BOLD << "1. Pawn    2. Rook    3. Knight    4. Bishop    5. Queen    6. King\n"
+         << as.RESET;
+    while (true)
+    {
+        cout << "Piece to move (1 - 6): ";
+        cin >> piece;
+        if (cin.fail() || piece < 1 || piece > 6)
+        {
+            cin.clear();
+            cin.ignore(INT_MAX, '\n');
+            cout << as.B_RED << "Invalid input. Please enter a number between 1 and 6." << as.RESET << "\n";
+            continue;
+        }
+        break;
+    }
+    cout << "\n";
+    switch (piece)
+    {
+    case 1:
+        int pawn;
+        int pawnCount = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                if (board[i][j].color == color)
+                {
+                    if (board[i][j].type == "P")
+                    {
+                        pawnCount++;
+                        cout << as.BOLD << pawnCount << ". " << YtoFiles(j + 1) << 8 - i << "    " << as.RESET;
+                    }
+                }
+            }
+        }
+        cout << "\n";
+        while (true)
+        {
+            cout << "Pawn to move (1 - " << pawnCount << "): ";
+            cin >> piece;
+            if (cin.fail() || piece < 1 || piece > pawnCount)
+            {
+                cin.clear();
+                cin.ignore(INT_MAX, '\n');
+                cout << as.B_RED << "Invalid input. Please enter a number between 1 and " << pawnCount << "." << as.RESET << "\n";
+                continue;
+            }
+            break;
+        }
+        for (int i = 0; i < 8; i++)
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                if (board[i][j].color == color)
+                {
+                    if (board[i][j].type == "P")
+                    {
+                        piece--;
+                        if (piece == 0)
+                        {
+                            int data[2] = {};
+                            int legalMoves = CalculateLegalMoves(board, color, i, j, data);
+                            string move;
+                            cin >> move;
+                            cout << "\n";
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        break;
+    }
 }
 
 int main()
 {
     system("");
-    
-    string board[8][8];
+
+    Piece board[8][8];
     ResetBoard(board);
+
     string startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     FENtoBoard(board, startFEN);
-    DrawBoard(board, 1, 1);
-    while (true)
-    {
-        int x, y;
-        cin >> x >> y;
-        system("cls");
-        DrawBoard(board, x, y);
-    }
 
+    DrawBoard(board);
+    Move(board, 1);
     return 0;
 }
