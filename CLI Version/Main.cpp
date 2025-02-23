@@ -65,10 +65,10 @@ AnsiiCodeEscapes as;
 
 struct Piece
 {
-    string representation; // Their Representation on the board
-    string type;           // Pawn, Rook, Knight, Bishop, Queen, King
-    int color;             // 1 for white, 0 for black, 888 for empty
-    int legalMoves;
+    string representation;
+    string type;
+    int color; // 1 for white, 0 for black, 888 for empty
+    // Previous position
     // Legal moves
 };
 
@@ -105,23 +105,23 @@ void FENtoBoard(Piece board[][8], string fen)
     pieceSymbols['q'] = "q";
     pieceSymbols['k'] = "k"; // Black pieces
 
-    int i = 0, j = 0;
-    for (char letter : fen)
+    int row = 0, col = 0;
+    for (char ch : fen)
     {
-        if (letter == '/')
+        if (ch == '/')
         {
-            i++;
-            j = 0;
+            row++;
+            col = 0;
         }
-        else if (isdigit(letter))
+        else if (isdigit(ch))
         {
-            j += letter - '0';
+            col += ch - '0';
         }
-        else if (isalpha(letter))
+        else if (isalpha(ch))
         {
-            board[i][j].representation = pieceSymbols[letter];
-            board[i][j].type = pieceSymbols[letter];
-            j++;
+            board[row][col].representation = pieceSymbols[ch];
+            board[row][col].type = pieceSymbols[ch];
+            col++;
         }
         else
         {
@@ -133,8 +133,6 @@ void FENtoBoard(Piece board[][8], string fen)
 void DrawBoard(Piece board[][8])
 {
     // board[8 - x][y - 1].representation = as.BOLD + "X";
-    CalculateLegalMoves(board);
-    system("cls");
 
     string white = as.BOLD + "\033[38;2;255;255;255m";
     string black = as.BOLD + "\033[38;2;0;0;0m";
@@ -245,105 +243,29 @@ void DrawBoard(Piece board[][8])
     cout << offX << borderBG + borderText << as.BOLD + " " << "   a  b  c  d  e  f  g  h    " << as.RESET << offY << "\n";
 }
 
-
-
 int CalculateLegalMoves(Piece board[][8], bool color, int x, int y, int data[])
 {
     cout << "\n";
     if (board[x][y].type == "P")
     {
-        if (board[x][y].color == 1)
+        int k = 0;
+        if (board[x - 1][y].color == 888)
         {
-            int k = 0;
-            int m[4][2];
-            if (board[x - 1][y].color == 888)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x + 1 << as.RESET << "    ";
-                m[0][0] = x - 1;
-                m[0][1] = y;
-            }
-            if (x == 6 && board[x - 2][y].color == 888 && board[x - 1][y].color == 888)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x + 2 << as.RESET << "    ";
-                m[1][0] = x - 2;
-                m[1][1] = y;
-            }
-            if (y > 0 && board[x - 1][y - 1].color == 0)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y) << 8 - x + 1 << as.RESET << "    ";
-                m[2][0] = x - 1;
-                m[2][1] = y - 1;
-            }
-            if (y < 7 && board[x - 1][y + 1].color == 0)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y + 2) << 8 - x + 1 << as.RESET << "    ";
-                m[3][0] = x - 1;
-                m[3][1] = y + 1;
-            }
-            cout << "\nMove " << YtoFiles(y + 1) << 8 - x << " to (1 - " << k << "): ";
-            int move;
-            cin >> move;
-            if (cin.fail() || move < 1 || move > k)
-            {
-                cin.clear();
-                cin.ignore(INT_MAX, '\n');
-                cout << as.B_RED << "Invalid input. Please enter a number between 1 and " << k << "." << as.RESET << "\n";
-                return 0;
-            }
-            data[0] = m[move - 1][0];
-            data[1] = m[move - 1][1];
-            return k;
+            k++;
+            cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x + 1 << as.RESET << "    ";
         }
-        else if (board[x][y].color == 0)
+        if (board[x - 2][y].color == 888)
         {
-            int k = 0;
-            int m[4][2];
-            if (board[x + 1][y].color == 888)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x - 1 << as.RESET << "    ";
-                m[0][0] = x + 1;
-                m[0][1] = y;
-            }
-            if (x == 1 && board[x + 2][y].color == 888 && board[x + 1][y].color == 888)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x - 2 << as.RESET << "    ";
-                m[1][0] = x + 2;
-                m[1][1] = y;
-            }
-            if (y < 7 && board[x + 1][y + 1].color == 1)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y + 2) << 8 - x - 1 << as.RESET << "    ";
-                m[2][0] = x + 1;
-                m[2][1] = y + 1;
-            }
-            if (y > 0 && board[x + 1][y - 1].color == 1)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y) << 8 - x - 1 << as.RESET << "    ";
-                m[3][0] = x + 1;
-                m[3][1] = y - 1;
-            }
-            cout << "\nMove " << YtoFiles(y + 1) << 8 - x << " to (1 - " << k << "): ";
-            int move;
-            cin >> move;
-            if (cin.fail() || move < 1 || move > k)
-            {
-                cin.clear();
-                cin.ignore(INT_MAX, '\n');
-                cout << as.B_RED << "Invalid input. Please enter a number between 1 and " << k << "." << as.RESET << "\n";
-                return 0;
-            }
-            data[0] = m[move - 1][0];
-            data[1] = m[move - 1][1];
-            return k;
+            k++;
+            cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x + 2 << as.RESET << "    ";
         }
+        if (board[x - 1][y - 1].color == !color)
+        {
+            k++;
+            cout << as.BOLD << k << ". " << YtoFiles(y + 1 - 1) << 8 - x + 1 << as.RESET << "    ";
+        }
+        cout << "\nMove " << YtoFiles(y + 1) << 8 - x << " to (1 - " << k << "): ";
+        return k;
     }
     else if (board[x][y].type == "R")
     {
@@ -365,14 +287,6 @@ int CalculateLegalMoves(Piece board[][8], bool color, int x, int y, int data[])
     {
         /* code */
     }
-    return 0;
-}
-
-void SwapPieces(Piece board[][8], int x1, int y1, int x2, int y2)
-{
-    Piece empty = {" ", " ", 888};
-    board[x2][y2] = board[x1][y1];
-    board[x1][y1] = empty;
 }
 
 void Move(Piece board[][8], bool color = 1)
@@ -400,7 +314,7 @@ void Move(Piece board[][8], bool color = 1)
     switch (piece)
     {
     case 1:
-        // int pawn; // Unused variable
+        int pawn;
         int pawnCount = 0;
         for (int i = 0; i < 8; i++)
         {
@@ -438,14 +352,10 @@ void Move(Piece board[][8], bool color = 1)
                     {
                         int data[2] = {};
                         int legalMoves = CalculateLegalMoves(board, color, i, j, data);
-
-                        SwapPieces(board, i, j, data[0], data[1]);
-                        DrawBoard(board);
-                        if (data[0] != i || data[1] != j)
-                        {
-                            Move(board, !color);
-                        }
-                        return;
+                        string move;
+                        cin >> move;
+                        cout << "\n";
+                        break;
                     }
                 }
             }
@@ -459,9 +369,9 @@ int main()
     system("");
 
     Piece board[8][8];
-    string startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"; // Standard starting position
-
     ResetBoard(board);
+
+    string startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     FENtoBoard(board, startFEN);
 
     DrawBoard(board);
