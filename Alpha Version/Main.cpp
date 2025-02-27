@@ -68,13 +68,44 @@ struct Piece
     string representation; // Their Representation on the board
     string type;           // Pawn, Rook, Knight, Bishop, Queen, King
     int color;             // 1 for white, 0 for black, 888 for empty
-    int legalMoves;
-    // Legal moves
+    int numberOfLegalMoves;
+    int legalMoves[25][2];
 };
 
 inline char YtoFiles(int y)
 {
     return y + 96;
+}
+
+void ResetBoard(Piece[][8]);
+void FENtoBoard(Piece[][8], string);
+void DrawBoard(Piece[][8]);
+void CalculateLegalMoves(Piece[][8]);
+void SwapPieces(Piece[][8], int, int, int, int);
+void Move(Piece[][8], bool);
+
+int main()
+{
+    system("");
+
+    Piece board[8][8];
+    string startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"; // Standard starting position
+
+    ResetBoard(board);
+    FENtoBoard(board, startFEN);
+
+    DrawBoard(board);
+    // Move(board, 1);
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            cout << board[i][j].type << " " << board[i][j].numberOfLegalMoves << "\n";
+        }
+        
+    }
+    
+    return 0;
 }
 
 void ResetBoard(Piece board[][8])
@@ -133,7 +164,18 @@ void FENtoBoard(Piece board[][8], string fen)
 void DrawBoard(Piece board[][8])
 {
     // board[8 - x][y - 1].representation = as.BOLD + "X";
-    CalculateLegalMoves(board);
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            for (int k = 0; k < 25; k++)
+            {
+                board[i][j].legalMoves[k][0] = 888;
+            }
+        }
+    }
+
+    // CalculateLegalMoves(board);
     system("cls");
 
     string white = as.BOLD + "\033[38;2;255;255;255m";
@@ -245,128 +287,249 @@ void DrawBoard(Piece board[][8])
     cout << offX << borderBG + borderText << as.BOLD + " " << "   a  b  c  d  e  f  g  h    " << as.RESET << offY << "\n";
 }
 
+// void CalculateLegalMoves(Piece board[][8])
+// {
+//     for (int i = 0; i < 8; i++)
+//     {
+//         for (int j = 0; j < 8; j++)
+//         {
+//             board[i][j].numberOfLegalMoves = 0; // Reset legal moves
+
+//             if (board[i][j].type == "P") // Pawn
+//             {
+//                 int legalMovesCount = 0;
+//                 if (board[i][j].color == 1) // White Pawn
+//                 {
+//                     if (i > 0 && board[i - 1][j].color == 888) // Move forward
+//                     {
+//                         board[i][j].legalMoves[legalMovesCount][0] = i - 1;
+//                         board[i][j].legalMoves[legalMovesCount][1] = j;
+//                         legalMovesCount++;
+//                     }
+//                     if (i == 6 && board[i - 2][j].color == 888 && board[i - 1][j].color == 888) // Two-step move
+//                     {
+//                         board[i][j].legalMoves[legalMovesCount][0] = i - 2;
+//                         board[i][j].legalMoves[legalMovesCount][1] = j;
+//                         legalMovesCount++;
+//                     }
+//                     if (i > 0 && j > 0 && board[i - 1][j - 1].color == 0) // Capture left
+//                     {
+//                         board[i][j].legalMoves[legalMovesCount][0] = i - 1;
+//                         board[i][j].legalMoves[legalMovesCount][1] = j - 1;
+//                         legalMovesCount++;
+//                     }
+//                     if (i > 0 && j < 7 && board[i - 1][j + 1].color == 0) // Capture right
+//                     {
+//                         board[i][j].legalMoves[legalMovesCount][0] = i - 1;
+//                         board[i][j].legalMoves[legalMovesCount][1] = j + 1;
+//                         legalMovesCount++;
+//                     }
+//                 }
+//                 else if (board[i][j].color == 0) // Black Pawn
+//                 {
+//                     if (i < 7 && board[i + 1][j].color == 888) // Move forward
+//                     {
+//                         board[i][j].legalMoves[legalMovesCount][0] = i + 1;
+//                         board[i][j].legalMoves[legalMovesCount][1] = j;
+//                         legalMovesCount++;
+//                     }
+//                     if (i == 1 && board[i + 2][j].color == 888 && board[i + 1][j].color == 888) // Two-step move
+//                     {
+//                         board[i][j].legalMoves[legalMovesCount][0] = i + 2;
+//                         board[i][j].legalMoves[legalMovesCount][1] = j;
+//                         legalMovesCount++;
+//                     }
+//                     if (i < 7 && j < 7 && board[i + 1][j + 1].color == 1) // Capture right
+//                     {
+//                         board[i][j].legalMoves[legalMovesCount][0] = i + 1;
+//                         board[i][j].legalMoves[legalMovesCount][1] = j + 1;
+//                         legalMovesCount++;
+//                     }
+//                     if (i < 7 && j > 0 && board[i + 1][j - 1].color == 1) // Capture left
+//                     {
+//                         board[i][j].legalMoves[legalMovesCount][0] = i + 1;
+//                         board[i][j].legalMoves[legalMovesCount][1] = j - 1;
+//                         legalMovesCount++;
+//                     }
+//                 }
+//                 board[i][j].numberOfLegalMoves = legalMovesCount;
+//             }
+//             else if (board[i][j].type == "R") // Rook
+//             {
+//                 int legalMovesCount = 0;
+//                 // Rook horizontal & vertical moves
+//                 for (int k = i + 1; k < 8 && board[k][j].color != board[i][j].color; k++) // Down
+//                 {
+//                     board[i][j].legalMoves[legalMovesCount][0] = k;
+//                     board[i][j].legalMoves[legalMovesCount][1] = j;
+//                     legalMovesCount++;
+//                     if (board[k][j].color != 888) break;
+//                 }
+//                 for (int k = i - 1; k >= 0 && board[k][j].color != board[i][j].color; k--) // Up
+//                 {
+//                     board[i][j].legalMoves[legalMovesCount][0] = k;
+//                     board[i][j].legalMoves[legalMovesCount][1] = j;
+//                     legalMovesCount++;
+//                     if (board[k][j].color != 888) break;
+//                 }
+//                 for (int k = j + 1; k < 8 && board[i][k].color != board[i][j].color; k++) // Right
+//                 {
+//                     board[i][j].legalMoves[legalMovesCount][0] = i;
+//                     board[i][j].legalMoves[legalMovesCount][1] = k;
+//                     legalMovesCount++;
+//                     if (board[i][k].color != 888) break;
+//                 }
+//                 for (int k = j - 1; k >= 0 && board[i][k].color != board[i][j].color; k--) // Left
+//                 {
+//                     board[i][j].legalMoves[legalMovesCount][0] = i;
+//                     board[i][j].legalMoves[legalMovesCount][1] = k;
+//                     legalMovesCount++;
+//                     if (board[i][k].color != 888) break;
+//                 }
+//                 board[i][j].numberOfLegalMoves = legalMovesCount;
+//             }
+//             else if (board[i][j].type == "K") // King
+//             {
+//                 int legalMovesCount = 0;
+//                 int kingMoves[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+//                 for (auto &move : kingMoves)
+//                 {
+//                     int newX = i + move[0];
+//                     int newY = j + move[1];
+//                     if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8 && board[newX][newY].color != board[i][j].color)
+//                     {
+//                         board[i][j].legalMoves[legalMovesCount][0] = newX;
+//                         board[i][j].legalMoves[legalMovesCount][1] = newY;
+//                         legalMovesCount++;
+//                     }
+//                 }
+//                 board[i][j].numberOfLegalMoves = legalMovesCount;
+//             }
+//         }
+//     }
+// }
 
 
-int CalculateLegalMoves(Piece board[][8], bool color, int x, int y, int data[])
-{
-    cout << "\n";
-    if (board[x][y].type == "P")
-    {
-        if (board[x][y].color == 1)
-        {
-            int k = 0;
-            int m[4][2];
-            if (board[x - 1][y].color == 888)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x + 1 << as.RESET << "    ";
-                m[0][0] = x - 1;
-                m[0][1] = y;
-            }
-            if (x == 6 && board[x - 2][y].color == 888 && board[x - 1][y].color == 888)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x + 2 << as.RESET << "    ";
-                m[1][0] = x - 2;
-                m[1][1] = y;
-            }
-            if (y > 0 && board[x - 1][y - 1].color == 0)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y) << 8 - x + 1 << as.RESET << "    ";
-                m[2][0] = x - 1;
-                m[2][1] = y - 1;
-            }
-            if (y < 7 && board[x - 1][y + 1].color == 0)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y + 2) << 8 - x + 1 << as.RESET << "    ";
-                m[3][0] = x - 1;
-                m[3][1] = y + 1;
-            }
-            cout << "\nMove " << YtoFiles(y + 1) << 8 - x << " to (1 - " << k << "): ";
-            int move;
-            cin >> move;
-            if (cin.fail() || move < 1 || move > k)
-            {
-                cin.clear();
-                cin.ignore(INT_MAX, '\n');
-                cout << as.B_RED << "Invalid input. Please enter a number between 1 and " << k << "." << as.RESET << "\n";
-                return 0;
-            }
-            data[0] = m[move - 1][0];
-            data[1] = m[move - 1][1];
-            return k;
-        }
-        else if (board[x][y].color == 0)
-        {
-            int k = 0;
-            int m[4][2];
-            if (board[x + 1][y].color == 888)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x - 1 << as.RESET << "    ";
-                m[0][0] = x + 1;
-                m[0][1] = y;
-            }
-            if (x == 1 && board[x + 2][y].color == 888 && board[x + 1][y].color == 888)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x - 2 << as.RESET << "    ";
-                m[1][0] = x + 2;
-                m[1][1] = y;
-            }
-            if (y < 7 && board[x + 1][y + 1].color == 1)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y + 2) << 8 - x - 1 << as.RESET << "    ";
-                m[2][0] = x + 1;
-                m[2][1] = y + 1;
-            }
-            if (y > 0 && board[x + 1][y - 1].color == 1)
-            {
-                k++;
-                cout << as.BOLD << k << ". " << YtoFiles(y) << 8 - x - 1 << as.RESET << "    ";
-                m[3][0] = x + 1;
-                m[3][1] = y - 1;
-            }
-            cout << "\nMove " << YtoFiles(y + 1) << 8 - x << " to (1 - " << k << "): ";
-            int move;
-            cin >> move;
-            if (cin.fail() || move < 1 || move > k)
-            {
-                cin.clear();
-                cin.ignore(INT_MAX, '\n');
-                cout << as.B_RED << "Invalid input. Please enter a number between 1 and " << k << "." << as.RESET << "\n";
-                return 0;
-            }
-            data[0] = m[move - 1][0];
-            data[1] = m[move - 1][1];
-            return k;
-        }
-    }
-    else if (board[x][y].type == "R")
-    {
-        /* code */
-    }
-    else if (board[x][y].type == "N")
-    {
-        /* code */
-    }
-    else if (board[x][y].type == "B")
-    {
-        /* code */
-    }
-    else if (board[x][y].type == "Q")
-    {
-        /* code */
-    }
-    else if (board[x][y].type == "K")
-    {
-        /* code */
-    }
-    return 0;
-}
+// int CalculateLegalMoves(Piece board[][8], bool color, int x, int y, int data[])
+// {
+//     cout << "\n";
+//     if (board[x][y].type == "P")
+//     {
+//         if (board[x][y].color == 1)
+//         {
+//             int k = 0;
+//             int m[4][2];
+//             if (board[x - 1][y].color == 888)
+//             {
+//                 k++;
+//                 cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x + 1 << as.RESET << "    ";
+//                 m[0][0] = x - 1;
+//                 m[0][1] = y;
+//             }
+//             if (x == 6 && board[x - 2][y].color == 888 && board[x - 1][y].color == 888)
+//             {
+//                 k++;
+//                 cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x + 2 << as.RESET << "    ";
+//                 m[1][0] = x - 2;
+//                 m[1][1] = y;
+//             }
+//             if (y > 0 && board[x - 1][y - 1].color == 0)
+//             {
+//                 k++;
+//                 cout << as.BOLD << k << ". " << YtoFiles(y) << 8 - x + 1 << as.RESET << "    ";
+//                 m[2][0] = x - 1;
+//                 m[2][1] = y - 1;
+//             }
+//             if (y < 7 && board[x - 1][y + 1].color == 0)
+//             {
+//                 k++;
+//                 cout << as.BOLD << k << ". " << YtoFiles(y + 2) << 8 - x + 1 << as.RESET << "    ";
+//                 m[3][0] = x - 1;
+//                 m[3][1] = y + 1;
+//             }
+//             cout << "\nMove " << YtoFiles(y + 1) << 8 - x << " to (1 - " << k << "): ";
+//             int move;
+//             cin >> move;
+//             if (cin.fail() || move < 1 || move > k)
+//             {
+//                 cin.clear();
+//                 cin.ignore(INT_MAX, '\n');
+//                 cout << as.B_RED << "Invalid input. Please enter a number between 1 and " << k << "." << as.RESET << "\n";
+//                 return 0;
+//             }
+//             data[0] = m[move - 1][0];
+//             data[1] = m[move - 1][1];
+//             return k;
+//         }
+//         else if (board[x][y].color == 0)
+//         {
+//             int k = 0;
+//             int m[4][2];
+//             if (board[x + 1][y].color == 888)
+//             {
+//                 k++;
+//                 cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x - 1 << as.RESET << "    ";
+//                 m[0][0] = x + 1;
+//                 m[0][1] = y;
+//             }
+//             if (x == 1 && board[x + 2][y].color == 888 && board[x + 1][y].color == 888)
+//             {
+//                 k++;
+//                 cout << as.BOLD << k << ". " << YtoFiles(y + 1) << 8 - x - 2 << as.RESET << "    ";
+//                 m[1][0] = x + 2;
+//                 m[1][1] = y;
+//             }
+//             if (y < 7 && board[x + 1][y + 1].color == 1)
+//             {
+//                 k++;
+//                 cout << as.BOLD << k << ". " << YtoFiles(y + 2) << 8 - x - 1 << as.RESET << "    ";
+//                 m[2][0] = x + 1;
+//                 m[2][1] = y + 1;
+//             }
+//             if (y > 0 && board[x + 1][y - 1].color == 1)
+//             {
+//                 k++;
+//                 cout << as.BOLD << k << ". " << YtoFiles(y) << 8 - x - 1 << as.RESET << "    ";
+//                 m[3][0] = x + 1;
+//                 m[3][1] = y - 1;
+//             }
+//             cout << "\nMove " << YtoFiles(y + 1) << 8 - x << " to (1 - " << k << "): ";
+//             int move;
+//             cin >> move;
+//             if (cin.fail() || move < 1 || move > k)
+//             {
+//                 cin.clear();
+//                 cin.ignore(INT_MAX, '\n');
+//                 cout << as.B_RED << "Invalid input. Please enter a number between 1 and " << k << "." << as.RESET << "\n";
+//                 return 0;
+//             }
+//             data[0] = m[move - 1][0];
+//             data[1] = m[move - 1][1];
+//             return k;
+//         }
+//     }
+//     else if (board[x][y].type == "R")
+//     {
+//         /* code */
+//     }
+//     else if (board[x][y].type == "N")
+//     {
+//         /* code */
+//     }
+//     else if (board[x][y].type == "B")
+//     {
+//         /* code */
+//     }
+//     else if (board[x][y].type == "Q")
+//     {
+//         /* code */
+//     }
+//     else if (board[x][y].type == "K")
+//     {
+//         /* code */
+//     }
+//     return 0;
+// }
 
 void SwapPieces(Piece board[][8], int x1, int y1, int x2, int y2)
 {
@@ -375,96 +538,211 @@ void SwapPieces(Piece board[][8], int x1, int y1, int x2, int y2)
     board[x1][y1] = empty;
 }
 
-void Move(Piece board[][8], bool color = 1)
-{
-    int piece;
+// void Move(Piece board[][8], bool color = 1)
+// {
+//     int piece;
+//     int totalPawnMoves = 0, totalRookMoves = 0, totalKnightMoves = 0, totalBishopMoves = 0, totalQueenMoves = 0, totalKingMoves = 0;
+//     for (int i = 0; i < 8; i++)
+//     {
+//         for (int j = 0; j < 8; j++)
+//         {
+//             if (board[i][j].color == color)
+//             {
+//                 if (board[i][j].type == "P")
+//                 {
+//                     totalPawnMoves += board[i][j].numberOfLegalMoves;
+//                 }
+//                 else if (board[i][j].type == "R")
+//                 {
+//                     totalRookMoves += board[i][j].numberOfLegalMoves;
+//                 }
+//                 else if (board[i][j].type == "N")
+//                 {
+//                     totalKnightMoves += board[i][j].numberOfLegalMoves;
+//                 }
+//                 else if (board[i][j].type == "B")
+//                 {
+//                     totalBishopMoves += board[i][j].numberOfLegalMoves;
+//                 }
+//                 else if (board[i][j].type == "Q")
+//                 {
+//                     totalQueenMoves += board[i][j].numberOfLegalMoves;
+//                 }
+//                 else if (board[i][j].type == "K")
+//                 {
+//                     totalKingMoves += board[i][j].numberOfLegalMoves;
+//                 }
+//             }
+//         }
+//     }
+//     bool hasPawnMoves = totalPawnMoves > 0;
+//     bool hasRookMoves = totalRookMoves > 0;
+//     bool hasKnightMoves = totalKnightMoves > 0;
+//     bool hasBishopMoves = totalBishopMoves > 0;
+//     bool hasQueenMoves = totalQueenMoves > 0;
+//     bool hasKingMoves = totalKingMoves > 0;
 
-    // FUTURE: Only show pieces that can move
+//     // Shows list of pieces that can move so player can choose which piece to move
+//     int pieceCount = 0;
 
-    cout << as.BOLD << "1. Pawn    2. Rook    3. Knight    4. Bishop    5. Queen    6. King\n"
-         << as.RESET;
-    while (true)
-    {
-        cout << "Piece to move (1 - 6): ";
-        cin >> piece;
-        if (cin.fail() || piece < 1 || piece > 6)
-        {
-            cin.clear();
-            cin.ignore(INT_MAX, '\n');
-            cout << as.B_RED << "Invalid input. Please enter a number between 1 and 6." << as.RESET << "\n";
-            continue;
-        }
-        break;
-    }
-    cout << "\n";
-    switch (piece)
-    {
-    case 1:
-        // int pawn; // Unused variable
-        int pawnCount = 0;
-        for (int i = 0; i < 8; i++)
-        {
-            for (int j = 0; j < 8; j++)
-            {
-                if (board[i][j].color == color && board[i][j].type == "P")
-                {
-                    pawnCount++;
-                    cout << as.BOLD << pawnCount << ". " << YtoFiles(j + 1) << 8 - i << "    " << as.RESET;
-                }
-            }
-        }
-        cout << "\n";
-        while (true)
-        {
-            cout << "Pawn to move (1 - " << pawnCount << "): ";
-            cin >> piece;
-            if (cin.fail() || piece < 1 || piece > pawnCount)
-            {
-                cin.clear();
-                cin.ignore(INT_MAX, '\n');
-                cout << as.B_RED << "Invalid input. Please enter a number between 1 and " << pawnCount << "." << as.RESET << "\n";
-                continue;
-            }
-            break;
-        }
-        for (int i = 0; i < 8; i++)
-        {
-            for (int j = 0; j < 8; j++)
-            {
-                if (board[i][j].color == color && board[i][j].type == "P")
-                {
-                    piece--;
-                    if (piece == 0)
-                    {
-                        int data[2] = {};
-                        int legalMoves = CalculateLegalMoves(board, color, i, j, data);
+//     if (hasPawnMoves)
+//     {
+//         pieceCount++;
+//         cout << as.BOLD << pieceCount << ". Pawn    ";
+//     }
+//     if (hasRookMoves)
+//     {
+//         pieceCount++;
+//         cout << as.BOLD << pieceCount << ". Rook    ";
+//     }
+//     if (hasKnightMoves)
+//     {
+//         pieceCount++;
+//         cout << as.BOLD << pieceCount << ". Knight    ";
+//     }
+//     if (hasBishopMoves)
+//     {
+//         pieceCount++;
+//         cout << as.BOLD << pieceCount << ". Bishop    ";
+//     }
+//     if (hasQueenMoves)
+//     {
+//         pieceCount++;
+//         cout << as.BOLD << pieceCount << ". Queen    ";
+//     }
+//     if (hasKingMoves)
+//     {
+//         pieceCount++;
+//         cout << as.BOLD << pieceCount << ". King    ";
+//     }
+//     cout << as.RESET << "\n";
+//     // cout << as.BOLD << "1. Pawn    2. Rook    3. Knight    4. Bishop    5. Queen    6. King\n"
+//     //      << as.RESET;
+//     while (true)
+//     {
+//         if (pieceCount > 1)
+//         {
+//             cout << "Piece to move (1 - " << pieceCount << "): ";
+//         }
+//         else
+//         {
+//             cout << "Piece to move: ";
+//         }
+//         cin >> piece;
+//         if (cin.fail() || piece < 1 || piece > pieceCount)
+//         {
+//             cin.clear();
+//             cin.ignore(INT_MAX, '\n');
+//             cout << as.B_RED << "Invalid input. Please enter a number between 1 and 6." << as.RESET << "\n";
+//             continue;
+//         }
+//         break;
+//     }
+//     cout << "\n";
 
-                        SwapPieces(board, i, j, data[0], data[1]);
-                        DrawBoard(board);
-                        if (data[0] != i || data[1] != j)
-                        {
-                            Move(board, !color);
-                        }
-                        return;
-                    }
-                }
-            }
-        }
-        break;
-    }
-}
+//     // FUTURE : Fix switch statement so it correctly points to the pieceCount
 
-int main()
-{
-    system("");
+//     switch (piece)
+//     {
+//     case 1:
+//         int pawnCount = 0;
+//         for (int i = 0; i < 8; i++)
+//         {
+//             for (int j = 0; j < 8; j++)
+//             {
+//                 if (board[i][j].color == color && board[i][j].type == "P")
+//                 {
+//                     pawnCount++;
+//                     cout << as.BOLD << pawnCount << ". " << YtoFiles(j + 1) << 8 - i << "    " << as.RESET;
+//                 }
+//             }
+//         }
+//         cout << "\n";
+//         while (true)
+//         {
+//             cout << "Pawn to move (1 - " << pawnCount << "): ";
+//             cin >> piece;
+//             if (cin.fail() || piece < 1 || piece > pawnCount)
+//             {
+//                 cin.clear();
+//                 cin.ignore(INT_MAX, '\n');
+//                 cout << as.B_RED << "Invalid input. Please enter a number between 1 and " << pawnCount << "." << as.RESET << "\n";
+//                 continue;
+//             }
+//             break;
+//         }
+//         // Display Legal Moves
+//         int selectedPawn = 0;
+//         for (int i = 0; i < 8; i++)
+//         {
+//             for (int j = 0; j < 8; j++)
+//             {
+//                 if (board[i][j].color == color && board[i][j].type == "P")
+//                 {
+//                     selectedPawn++;
+//                     if (selectedPawn == piece)
+//                     {
+//                         int moveCount = 0;
+//                         for (int k = 0; k < 25; k++)
+//                         {
+//                             if (board[i][j].legalMoves[k][0] != 888)
+//                             {
+//                                 moveCount++;
+//                                 cout << as.BOLD << moveCount << ". " << YtoFiles(j + 1) << 8 - i << " to " << YtoFiles(board[i][j].legalMoves[k][1] + 1) << 8 - board[i][j].legalMoves[k][0] << "    " << as.RESET;
+//                             }
+//                         }
+//                         cout << "\n";
+//                         int move;
+//                         while (true)
+//                         {
+//                             cout << "Move " << YtoFiles(j + 1) << 8 - i << " to (1 - " << moveCount << "): ";
+//                             cin >> move;
+//                             if (cin.fail() || move < 1 || move > moveCount)
+//                             {
+//                                 cin.clear();
+//                                 cin.ignore(INT_MAX, '\n');
+//                                 cout << as.B_RED << "Invalid input. Please enter a number between 1 and " << moveCount << "." << as.RESET << "\n";
+//                                 continue;
+//                             }
+//                             break;
+//                         }
+//                         SwapPieces(board, i, j, board[i][j].legalMoves[move - 1][0], board[i][j].legalMoves[move - 1][1]);
+//                         DrawBoard(board);
+//                         return;
+//                     }
+//                 }
+//             }
+//         }
 
-    Piece board[8][8];
-    string startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"; // Standard starting position
+        // Move Piece
 
-    ResetBoard(board);
-    FENtoBoard(board, startFEN);
-
-    DrawBoard(board);
-    Move(board, 1);
-    return 0;
-}
+        // for (int i = 0; i < 8; i++)
+        // {
+        //     for (int j = 0; j < 8; j++)
+        //     {
+        //         if (board[i][j].color == color && board[i][j].type == "P")
+        //         {
+        //             piece--;
+        //             if (piece == 0)
+        //             {
+        //                 int pawnToMove;
+        //                 for (int k = 0; k < 25; k++)
+        //                 {
+        //                     if (board[i][j].legalMoves[k][0] != 888)
+        //                     {
+        //                         cout << as.BOLD << k + 1 << ". " << YtoFiles(j + 1) << 8 - i << " to " << YtoFiles(board[i][j].legalMoves[k][1] + 1) << 8 - board[i][j].legalMoves[k][0] << "    " << as.RESET;
+        //                         pawnToMove = k;
+        //                     }
+        //                 }
+        //                 cout << "Move " << YtoFiles(j + 1) << 8 - i << " to (1 - " << pawnToMove + 1 << "): ";
+        //                 cin >> pawnToMove;
+        //                 // SwapPieces(board, i, j, data[0], data[1]);
+        //                 DrawBoard(board);
+        //                 return;
+        //             }
+        //         }
+        //     }
+//         // }
+//         break;
+//     }
+// }
