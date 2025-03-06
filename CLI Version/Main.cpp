@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+// #include <windows.h>
 using namespace std;
 
 struct AnsiiCodeEscapes
@@ -623,6 +624,175 @@ void PlayerMove(Piece board[][8], bool color = 1)
     DrawBoard(board);
 }
 
+void AI_Move_Random(Piece board[][8], bool color = 0)
+{
+    // Collect all pieces of the given color that have legal moves.
+    int totalPieces = 0;
+    int positions[64][2]; // stores coordinates [row, col] of movable pieces
+
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            if (board[i][j].color == color)
+            {
+                int moveCount;
+                int **moves = CalculateLegalMoves(board, color, i, j, moveCount);
+                if (moveCount > 0)
+                {
+                    positions[totalPieces][0] = i;
+                    positions[totalPieces][1] = j;
+                    totalPieces++;
+                }
+                for (int k = 0; k < 64; k++)
+                    delete[] moves[k];
+                delete[] moves;
+            }
+        }
+    }
+
+    if (totalPieces == 0)
+    {
+        cout << as.B_RED << "AI: No legal moves available!" << as.RESET << "\n";
+        return;
+    }
+
+    // Randomly select one piece from the available pieces.
+    int pieceIndex = rand() % totalPieces;
+    int x = positions[pieceIndex][0];
+    int y = positions[pieceIndex][1];
+
+    int moveCount;
+    int **moves = CalculateLegalMoves(board, color, x, y, moveCount);
+    if (moveCount == 0)
+    {
+        for (int k = 0; k < 64; k++)
+            delete[] moves[k];
+        delete[] moves;
+        cout << as.B_RED << "AI: Selected piece has no moves." << as.RESET << "\n";
+        return;
+    }
+
+    // Randomly select one legal move.
+    int moveIndex = rand() % moveCount;
+    int newX = moves[moveIndex][0];
+    int newY = moves[moveIndex][1];
+
+    // Apply move.
+    board[newX][newY] = board[x][y];
+    board[x][y].representation = " ";
+    board[x][y].type = "";
+    board[x][y].color = 888;
+
+    cout << as.GREEN << "AI moves from " << YtoFiles(y + 1) << 8 - x
+         << " to " << YtoFiles(newY + 1) << 8 - newX << as.RESET << "\n";
+
+    for (int k = 0; k < 64; k++)
+        delete[] moves[k];
+    delete[] moves;
+
+    DrawBoard(board);
+}
+
+void AI_Move(Piece board[][8], bool color = 0)
+{
+    int totalPieces = 0;
+    int positions[64][2]; // Stores coordinates [row, col] of movable pieces
+    int bestMoveIndex = -1;
+    int bestPieceIndex = -1;
+    
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            if (board[i][j].color == color)
+            {
+                int moveCount;
+                int **moves = CalculateLegalMoves(board, color, i, j, moveCount);
+                if (moveCount > 0)
+                {
+                    positions[totalPieces][0] = i;
+                    positions[totalPieces][1] = j;
+                    totalPieces++;
+
+                    // Check for a capturing move
+                    for (int k = 0; k < moveCount; k++)
+                    {
+                        int newX = moves[k][0];
+                        int newY = moves[k][1];
+
+                        if (board[newX][newY].color != 888 && board[newX][newY].color != color)
+                        {
+                            bestPieceIndex = totalPieces - 1;
+                            bestMoveIndex = k;
+                        }
+                    }
+                }
+
+                for (int k = 0; k < 64; k++)
+                    delete[] moves[k];
+                delete[] moves;
+            }
+        }
+    }
+
+    if (totalPieces == 0)
+    {
+        cout << as.B_RED << "AI: No legal moves available!" << as.RESET << "\n";
+        return;
+    }
+
+    int pieceIndex, moveIndex;
+
+    if (bestMoveIndex != -1)
+    {
+        // If a capturing move exists, prioritize it
+        pieceIndex = bestPieceIndex;
+        moveIndex = bestMoveIndex;
+    }
+    else
+    {
+        // Otherwise, pick the first available piece with moves
+        pieceIndex = 0;
+        int x = positions[pieceIndex][0];
+        int y = positions[pieceIndex][1];
+
+        int moveCount;
+        int **moves = CalculateLegalMoves(board, color, x, y, moveCount);
+
+        moveIndex = 0; // Pick the first move available
+
+        for (int k = 0; k < 64; k++)
+            delete[] moves[k];
+        delete[] moves;
+    }
+
+    int x = positions[pieceIndex][0];
+    int y = positions[pieceIndex][1];
+
+    int moveCount;
+    int **moves = CalculateLegalMoves(board, color, x, y, moveCount);
+
+    int newX = moves[moveIndex][0];
+    int newY = moves[moveIndex][1];
+
+    // Apply move
+    board[newX][newY] = board[x][y];
+    board[x][y].representation = " ";
+    board[x][y].type = "";
+    board[x][y].color = 888;
+
+    cout << as.GREEN << "AI moves from " << YtoFiles(y + 1) << 8 - x
+         << " to " << YtoFiles(newY + 1) << 8 - newX << as.RESET << "\n";
+
+    for (int k = 0; k < 64; k++)
+        delete[] moves[k];
+    delete[] moves;
+
+    DrawBoard(board);
+}
+
+
 int main()
 {
     system("");
@@ -645,7 +815,8 @@ int main()
     while (true)
     {
         PlayerMove(board, 1);
-        PlayerMove(board, 0);
+        // Sleep(400);
+        AI_Move(board, 0);
     }
     return 0;
 }
